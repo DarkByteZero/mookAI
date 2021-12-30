@@ -86,7 +86,7 @@ export class Mook
 			const token = canvas.tokens.get (id);
 
 			// todo: add "factions" to allow targeting of npcs
-			if (! this.isPC (token)) return false;
+			if (combatant.actor.data.type == "npc") return false;
 			// This shouldn't be possible
 			if (! token.inCombat) return false;
 			// Don't attack downed PCs

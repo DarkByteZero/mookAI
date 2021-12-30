@@ -194,15 +194,15 @@ export class MookAI
 		Hooks.on ("updateToken", (token_, changes_, diff_, sceneID_) => {
 			if (! diff_?.diff)
 				return;
-		
+
 			this.updateTokens (changes_);
 		});
 
 		Hooks.on ("createCombatant", (combatant_, config_, id_) => {
-			this.addCombatant (id_, combatant_.data.tokenId);
+			this.addCombatant (combatant_);
 		});
 		Hooks.on ("deleteCombatant", (combatant_, config_, id_) => {
-			this.deleteCombatant (id_, combatant_.data.tokenId);
+			this.deleteCombatant (combatant_);
 		});
 		Hooks.on ("createCombat", (combat_, config_, id_) => {
 			this.combatStart (combat_);
@@ -256,7 +256,7 @@ export class MookAI
 			document.addEventListener('keyup', evt => {
 				if (evt.key.toLowerCase () !== 'g' || ! evt.target.classList.contains ("game") || this.busy)
 					return;
-	
+
 				if (evt.shiftKey)
 					this.takeControlledTurns ();
 				else if (evt.ctrlKey)
@@ -285,17 +285,17 @@ export class MookAI
 		this._combats = new Map ();
 		this._busy = false;
 	}
-	
-	addCombatant (combatId_, id_)
+
+	addCombatant (combatant_)
 	{
-		const mook = new Mook (canvas.tokens.get (id_), this.metric);
-		this.combats.get (combatId_).set (id_, mook);
+		const mook = new Mook (canvas.tokens.get (combatant_.data.tokenId), this.metric);
+		this.combats.get (combatant_.combat.data._id).set (combatant_.data.tokenId, mook);
 		return mook;
 	}
 
-	deleteCombatant (combat_, id_)
+	deleteCombatant (combatant_)
 	{
-		this.combats.get (combat_.id).delete (id_);
+		this.combats.get (combatant_.combat.data._id).delete (combatant_.data.tokenId);
 	}
 
 	// Throws if there are no combats in the active scene
@@ -329,7 +329,7 @@ export class MookAI
 			const newToken = canvas.tokens.get (combatant.data.tokenId);
 
 			if (! newToken)
-			    return;
+				return;
 
 			newMooks.set (combatant.data.tokenId, new Mook (newToken, this.metric));
 		});
@@ -409,15 +409,15 @@ export class MookAI
 				ui.notifications.warn ("mookAI | Mook not found in scene. Please verify that the current scene is active.");
 				throw "Failed to find mook (id: " + game.combat.current.tokenId + ") in scene (id: " + game.scenes.active.id + "). The most likely cause is that you are viewing an inactive scene. Please activate the scene before using mookAI. If the scene is already active, please submit a bug report!";
 			}
-	
+
 			this._busy = true;
-	
+
 			await mook_.startTurn ();
 			await mook_.sense ();
 			mook_.planTurn ();
 			await mook_.act ();
 			await mook_.endTurn ();
-	
+
 			this._busy = false;
 			return true;
 		}
@@ -450,14 +450,14 @@ export class MookAI
 
 		if (this.metric === metric)
 			return;
-		
+
 		this.metric = metric;
 		this.combats.forEach ((mookMap, combatId) => {
 			mookMap.forEach ((mook, mookId) => {
 				this.addCombatant (combatId, mookId);
 			});
 		});
-		
+
 	}
 
 	updateTokens (changes_)
